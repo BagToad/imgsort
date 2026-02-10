@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g. 1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Install ONNX Runtime (macOS)
+        if: matrix.goos == 'darwin'
+        run: brew install onnxruntime
+
+      - name: Install ONNX Runtime (Linux)
+        if: matrix.goos == 'linux'
+        run: |
+          ONNX_VERSION=1.24.1
+          curl -sL "https://github.com/microsoft/onnxruntime/releases/download/v${ONNX_VERSION}/onnxruntime-linux-x64-${ONNX_VERSION}.tgz" | tar xz
+          sudo cp -r onnxruntime-linux-x64-${ONNX_VERSION}/lib/* /usr/local/lib/
+          sudo cp -r onnxruntime-linux-x64-${ONNX_VERSION}/include/* /usr/local/include/
+          sudo ldconfig
+
+      - name: Install ONNX Runtime (Windows)
+        if: matrix.goos == 'windows'
+        shell: pwsh
+        run: |
+          $ONNX_VERSION = "1.24.1"
+          Invoke-WebRequest -Uri "https://github.com/microsoft/onnxruntime/releases/download/v${ONNX_VERSION}/onnxruntime-win-x64-${ONNX_VERSION}.zip" -OutFile onnxruntime.zip
+          Expand-Archive onnxruntime.zip -DestinationPath onnxruntime
+          Copy-Item "onnxruntime/onnxruntime-win-x64-${ONNX_VERSION}/lib/*" -Destination "$env:SystemRoot\System32\" -Force
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '1'
+        run: |
+          EXT=""
+          if [ "${{ matrix.goos }}" = "windows" ]; then EXT=".exe"; fi
+          go build -ldflags="-s -w" -o "imgsort-${{ matrix.goos }}-${{ matrix.goarch }}${EXT}" ./cmd/imgsort
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: imgsort-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: imgsort-*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v6
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ inputs.version }}" \
+            --title "v${{ inputs.version }}" \
+            --generate-notes \
+            artifacts/*
