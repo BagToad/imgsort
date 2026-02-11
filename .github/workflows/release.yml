@@ -53,7 +53,10 @@ jobs:
           $ONNX_VERSION = "1.24.1"
           Invoke-WebRequest -Uri "https://github.com/microsoft/onnxruntime/releases/download/v${ONNX_VERSION}/onnxruntime-win-x64-${ONNX_VERSION}.zip" -OutFile onnxruntime.zip
           Expand-Archive onnxruntime.zip -DestinationPath onnxruntime
-          Copy-Item "onnxruntime/onnxruntime-win-x64-${ONNX_VERSION}/lib/*" -Destination "$env:SystemRoot\System32\" -Force
+          $onnxDir = "onnxruntime/onnxruntime-win-x64-${ONNX_VERSION}"
+          echo "CGO_CFLAGS=-I$((Resolve-Path $onnxDir/include).Path)" >> $env:GITHUB_ENV
+          echo "CGO_LDFLAGS=-L$((Resolve-Path $onnxDir/lib).Path)" >> $env:GITHUB_ENV
+          echo "$((Resolve-Path $onnxDir/lib).Path)" >> $env:GITHUB_PATH
 
       - name: Build
         env:
