@@ -35,7 +35,9 @@ jobs:
 
       - name: Install ONNX Runtime (macOS)
         if: matrix.goos == 'darwin'
-        run: brew install onnxruntime
+        run: |
+          brew install onnxruntime
+          cp /opt/homebrew/lib/libonnxruntime.dylib internal/onnxlib/libonnxruntime.dylib
 
       - name: Install ONNX Runtime (Linux)
         if: matrix.goos == 'linux'
@@ -45,6 +47,7 @@ jobs:
           sudo cp -r onnxruntime-linux-x64-${ONNX_VERSION}/lib/* /usr/local/lib/
           sudo cp -r onnxruntime-linux-x64-${ONNX_VERSION}/include/* /usr/local/include/
           sudo ldconfig
+          cp onnxruntime-linux-x64-${ONNX_VERSION}/lib/libonnxruntime.so internal/onnxlib/libonnxruntime.so
 
       - name: Install ONNX Runtime (Windows)
         if: matrix.goos == 'windows'
@@ -54,6 +57,7 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/microsoft/onnxruntime/releases/download/v${ONNX_VERSION}/onnxruntime-win-x64-${ONNX_VERSION}.zip" -OutFile onnxruntime.zip
           Expand-Archive onnxruntime.zip -DestinationPath onnxruntime
           $onnxDir = "onnxruntime/onnxruntime-win-x64-${ONNX_VERSION}"
+          Copy-Item "$onnxDir/lib/onnxruntime.dll" -Destination "internal/onnxlib/onnxruntime.dll"
           echo "CGO_CFLAGS=-I$((Resolve-Path $onnxDir/include).Path)" >> $env:GITHUB_ENV
           echo "CGO_LDFLAGS=-L$((Resolve-Path $onnxDir/lib).Path)" >> $env:GITHUB_ENV
           echo "$((Resolve-Path $onnxDir/lib).Path)" >> $env:GITHUB_PATH
@@ -66,7 +70,7 @@ jobs:
         run: |
           EXT=""
           if [ "${{ matrix.goos }}" = "windows" ]; then EXT=".exe"; fi
-          go build -ldflags="-s -w" -o "imgsort-${{ matrix.goos }}-${{ matrix.goarch }}${EXT}" ./cmd/imgsort
+          go build -tags embed_onnx -ldflags="-s -w" -o "imgsort-${{ matrix.goos }}-${{ matrix.goarch }}${EXT}" ./cmd/imgsort
         shell: bash
 
       - name: Upload artifact

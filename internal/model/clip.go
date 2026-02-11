@@ -5,6 +5,7 @@ import (
 	"math"
 	"runtime"
 
+	"github.com/bagtoad/imgsort/internal/onnxlib"
 	ort "github.com/yalue/onnxruntime_go"
 )
 
@@ -15,10 +16,14 @@ type CLIPSession struct {
 }
 
 // NewCLIPSession creates a new CLIP inference session.
-// onnxrtLibPath is the path to the ONNX Runtime shared library.
-// If empty, it uses platform defaults.
-func NewCLIPSession(onnxrtLibPath string) (*CLIPSession, error) {
-	if onnxrtLibPath == "" {
+// If explicitPath is empty, it tries the embedded library first, then platform defaults.
+func NewCLIPSession(explicitPath string) (*CLIPSession, error) {
+	var onnxrtLibPath string
+	if explicitPath != "" {
+		onnxrtLibPath = explicitPath
+	} else if extractedPath, err := onnxlib.Extract(); err == nil {
+		onnxrtLibPath = extractedPath
+	} else {
 		onnxrtLibPath = defaultONNXRuntimePath()
 	}
 	ort.SetSharedLibraryPath(onnxrtLibPath)

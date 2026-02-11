@@ -1,0 +1,4 @@
+# Embedded ONNX Runtime libraries (placed by CI before build)
+libonnxruntime.dylib
+libonnxruntime.so
+onnxruntime.dll
