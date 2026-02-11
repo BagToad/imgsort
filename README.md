@@ -50,7 +50,13 @@ By default, imgsort uses a built-in list of 96 common photo categories. You can 
 - **CLI flag:** `--categories "cat1,cat2,cat3"` — uses only these categories
 - **Config file:** Create `~/.imgsort/categories.txt` with one category per line
 
-## Prerequisites
+## Installation
+
+Download a pre-built binary from [Releases](https://github.com/BagToad/imgsort/releases). Release binaries include ONNX Runtime — no additional dependencies required.
+
+## Building from Source
+
+### Prerequisites
 
 - **Go 1.25+**
 - **C compiler** (for CGo / ONNX Runtime bindings)
@@ -75,7 +81,7 @@ brew install onnxruntime
 # Extract and copy onnxruntime.dll to a directory on your PATH
 ```
 
-## Build
+### Build
 
 ```bash
 make setup            # Install ONNX Runtime (macOS only)
