@@ -69,6 +69,12 @@ brew install onnxruntime
 # Extract and copy libonnxruntime.so to /usr/lib/
 ```
 
+**Windows:**
+```powershell
+# Download onnxruntime-win-x64-<version>.zip from https://github.com/microsoft/onnxruntime/releases
+# Extract and copy onnxruntime.dll to a directory on your PATH
+```
+
 ## Build
 
 ```bash
