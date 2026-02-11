@@ -37,13 +37,15 @@ imgsort ~/Photos --confidence 0.3
 ## How It Works
 
 1. Scans the target directory for image files (JPEG, PNG, GIF, BMP, WebP, TIFF)
+   - Only scans the top-level directory (non-recursive)
+   - Hidden files (starting with `.`) are automatically skipped
 2. Downloads the CLIP ViT-B/32 model on first run (~600MB, stored in `~/.imgsort/models/`)
 3. For each image, computes similarity against all candidate categories using zero-shot classification
 4. Moves images into category-named subfolders (or prints a preview with `--dry-run`)
 
 ## Custom Categories
 
-By default, imgsort uses a built-in list of ~90 common photo categories. You can customize this:
+By default, imgsort uses a built-in list of 96 common photo categories. You can customize this:
 
 - **CLI flag:** `--categories "cat1,cat2,cat3"` — uses only these categories
 - **Config file:** Create `~/.imgsort/categories.txt` with one category per line
@@ -70,10 +72,12 @@ brew install onnxruntime
 ## Build
 
 ```bash
-make setup    # Install ONNX Runtime (macOS only)
-make build    # Build the binary
-make install  # Install to $GOPATH/bin
-make test     # Run tests
+make setup            # Install ONNX Runtime (macOS only)
+make build            # Build the binary
+make install          # Install to $GOPATH/bin
+make test             # Run unit tests
+make test-integration # Run integration tests (requires ONNX Runtime + model)
+make clean            # Remove built binary
 ```
 
 ## Supported Image Formats
